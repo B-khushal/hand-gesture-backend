@@ -30,19 +30,13 @@ LOGGER = logging.getLogger("gesture_backend")
 
 
 def _parse_allowed_origins() -> list[str]:
-    defaults = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "https://hand-gesture-frontend.onrender.com",
-    ]
     configured = os.environ.get("FRONTEND_URL", "").strip()
     if not configured:
-        return defaults
+        return ["*"]
 
     origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
-    for default_origin in defaults:
-        if default_origin not in origins:
-            origins.append(default_origin)
+    if "*" not in origins:
+        origins.append("*")
     return origins
 
 
@@ -76,7 +70,7 @@ ASYNC_MODE = _resolve_socketio_async_mode()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "gesture-recognition-secret")
-CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=False)
 socketio = SocketIO(
     app,
     cors_allowed_origins=ALLOWED_ORIGINS,
