@@ -19,7 +19,7 @@ from flask_socketio import SocketIO, emit
 
 from core.gesture_recognizer import GestureRecognizer
 from core.skin_detector import SkinColorDetector
-from utils.helpers import decode_base64_frame, encode_frame_to_base64
+from utils.helpers import decode_base64_frame, encode_frame_to_base64, resize_frame
 
 
 logging.basicConfig(
@@ -202,6 +202,9 @@ def handle_frame(data):
         if frame is None or frame.size == 0:
             emit("error", {"message": "Failed to decode frame"})
             return
+
+        # Keep processing cost bounded on cloud free instances.
+        frame = resize_frame(frame, max_width=960)
 
         skin_mask, _ = skin_detector.detect(frame)
         hand_region = skin_detector.extract_hand_region(skin_mask)
