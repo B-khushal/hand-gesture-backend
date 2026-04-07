@@ -30,14 +30,7 @@ LOGGER = logging.getLogger("gesture_backend")
 
 
 def _parse_allowed_origins() -> list[str]:
-    configured = os.environ.get("FRONTEND_URL", "").strip()
-    if not configured:
-        return ["*"]
-
-    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
-    if "*" not in origins:
-        origins.append("*")
-    return origins
+    return ["*"]
 
 
 def _resolve_socketio_async_mode() -> str:
@@ -70,10 +63,10 @@ ASYNC_MODE = _resolve_socketio_async_mode()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "gesture-recognition-secret")
-CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=False)
+CORS(app, origins="*", supports_credentials=False)
 socketio = SocketIO(
     app,
-    cors_allowed_origins=ALLOWED_ORIGINS,
+    cors_allowed_origins="*",
     async_mode=ASYNC_MODE,
     ping_timeout=30,
     ping_interval=20,
