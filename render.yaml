@@ -12,6 +12,8 @@ services:
         value: 3.12.11
       - key: SOCKETIO_ASYNC_MODE
         value: eventlet
+      - key: DISABLE_MEDIAPIPE
+        value: "1"
       - key: FRONTEND_URL
         value: https://hand-gesture-0eb5.onrender.com
       - key: SECRET_KEY

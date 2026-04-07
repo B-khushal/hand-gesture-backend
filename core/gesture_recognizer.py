@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 import sys
 from collections import Counter, deque
 
@@ -74,6 +75,20 @@ class GestureRecognizer:
         self.detector_name = "opencv"
         self.landmark_detection_enabled = False
         self.runtime_warning = ""
+        disable_mediapipe = os.environ.get("DISABLE_MEDIAPIPE", "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+
+        if disable_mediapipe:
+            self.runtime_warning = (
+                "MediaPipe disabled by DISABLE_MEDIAPIPE environment setting. "
+                "Using contour-based fallback detection."
+            )
+            LOGGER.warning("MediaPipe disabled via DISABLE_MEDIAPIPE")
+            return
 
         if mp is not None:
             try:
