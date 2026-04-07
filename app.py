@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import platform
+import sys
 import time
 from typing import Any
 
@@ -35,7 +36,33 @@ def _parse_allowed_origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
+def _resolve_socketio_async_mode() -> str:
+    """
+    Pick a Socket.IO async mode that is safe for the current runtime.
+
+    Priority:
+    1) Explicit env override via SOCKETIO_ASYNC_MODE
+    2) Python 3.14+ defaults to threading (eventlet is currently incompatible)
+    3) Try eventlet when importable
+    4) Fallback to threading
+    """
+    forced_mode = os.environ.get("SOCKETIO_ASYNC_MODE", "").strip().lower()
+    if forced_mode:
+        return forced_mode
+
+    if sys.version_info >= (3, 14):
+        return "threading"
+
+    try:
+        import eventlet  # noqa: F401
+
+        return "eventlet"
+    except Exception:
+        return "threading"
+
+
 ALLOWED_ORIGINS = _parse_allowed_origins()
+ASYNC_MODE = _resolve_socketio_async_mode()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "gesture-recognition-secret")
@@ -43,7 +70,7 @@ CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 socketio = SocketIO(
     app,
     cors_allowed_origins=ALLOWED_ORIGINS,
-    async_mode="eventlet",
+    async_mode=ASYNC_MODE,
     ping_timeout=30,
     ping_interval=20,
     max_http_buffer_size=8_000_000,
@@ -76,6 +103,7 @@ def health_check():
             "detector": runtime_info["detector"],
             "landmark_detection_enabled": runtime_info["landmark_detection_enabled"],
             "runtime_warning": runtime_info["runtime_warning"],
+            "socketio_async_mode": ASYNC_MODE,
             "python_version": platform.python_version(),
         }
     )
@@ -243,8 +271,9 @@ def handle_calibrate(data):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     LOGGER.info(
-        "Starting Hand Gesture Recognition Server host=0.0.0.0 port=%s origins=%s",
+        "Starting Hand Gesture Recognition Server host=0.0.0.0 port=%s origins=%s async_mode=%s",
         port,
         ALLOWED_ORIGINS,
+        ASYNC_MODE,
     )
     socketio.run(app, host="0.0.0.0", port=port, debug=False)
