@@ -30,10 +30,20 @@ LOGGER = logging.getLogger("gesture_backend")
 
 
 def _parse_allowed_origins() -> list[str]:
+    defaults = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://hand-gesture-frontend.onrender.com",
+    ]
     configured = os.environ.get("FRONTEND_URL", "").strip()
     if not configured:
-        return ["http://localhost:3000", "http://localhost:5173"]
-    return [origin.strip() for origin in configured.split(",") if origin.strip()]
+        return defaults
+
+    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+    for default_origin in defaults:
+        if default_origin not in origins:
+            origins.append(default_origin)
+    return origins
 
 
 def _resolve_socketio_async_mode() -> str:
